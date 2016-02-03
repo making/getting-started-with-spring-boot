@@ -1,9 +1,9 @@
 package com.example;
 
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -11,18 +11,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class CityController {
-	static List<City> cities = new CopyOnWriteArrayList<>();
-	static AtomicInteger counter = new AtomicInteger(0);
+	@Autowired
+	JdbcTemplate jdbcTemplate;
 
 	@RequestMapping(value = "/cities", method = RequestMethod.GET)
 	List<City> getCities() {
-		return cities;
+		return jdbcTemplate.query("SELECT id, name FROM city ORDER BY id", (rs, i) -> {
+			City city = new City();
+			city.setId(rs.getInt("id"));
+			city.setName(rs.getString("name"));
+			return city;
+		});
 	}
 
 	@RequestMapping(value = "/cities", method = RequestMethod.POST)
 	City postCities(@RequestBody City city) {
-		city.setId(counter.incrementAndGet());
-		cities.add(city);
+		jdbcTemplate.update("INSERT INTO city(name) VALUES(?)", city.getName());
 		return city;
 	}
 }
